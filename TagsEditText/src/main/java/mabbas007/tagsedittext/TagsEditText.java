@@ -12,12 +12,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Parcel;
 import android.os.Parcelable;
-import android.support.annotation.ColorInt;
-import android.support.annotation.ColorRes;
-import android.support.annotation.DimenRes;
-import android.support.annotation.DrawableRes;
-import android.support.annotation.Nullable;
-import android.support.v4.content.ContextCompat;
 import android.text.Editable;
 import android.text.InputType;
 import android.text.Spannable;
@@ -34,6 +28,13 @@ import android.view.ViewTreeObserver;
 import android.widget.AutoCompleteTextView;
 import android.widget.EditText;
 import android.widget.TextView;
+
+import androidx.annotation.ColorInt;
+import androidx.annotation.ColorRes;
+import androidx.annotation.DimenRes;
+import androidx.annotation.DrawableRes;
+import androidx.annotation.Nullable;
+import androidx.core.content.ContextCompat;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -155,6 +156,7 @@ public class TagsEditText extends AutoCompleteTextView {
     @Override
     public void setText(CharSequence text, BufferType type) {
         if (mIsSetTextDisabled) return;
+        if (mTags == null) return;
         if (!TextUtils.isEmpty(text)) {
             String source = mIsSpacesAllowedInTags ? text.toString().trim() : text.toString().replaceAll(" ", "");
             if (mTags.isEmpty()) {
@@ -413,7 +415,7 @@ public class TagsEditText extends AutoCompleteTextView {
         }
 
         setMovementMethod(LinkMovementMethod.getInstance());
-        setInputType(InputType.TYPE_CLASS_TEXT
+        setInputType(getInputType() | InputType.TYPE_CLASS_TEXT
                 | InputType.TYPE_TEXT_FLAG_MULTI_LINE
                 | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
 
@@ -621,6 +623,12 @@ public class TagsEditText extends AutoCompleteTextView {
         textView.setTextSize(TypedValue.COMPLEX_UNIT_PX, mTagsTextSize);
         textView.setTextColor(mTagsTextColor);
         textView.setPadding(mTagsPaddingLeft, mTagsPaddingTop, mTagsPaddingRight, mTagsPaddingBottom);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                textView.setAllCaps(isAllCaps());
+            }
+            textView.setFontFeatureSettings(getFontFeatureSettings());
+        }
 
         // check Android version for set background
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
