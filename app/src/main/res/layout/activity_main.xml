@@ -72,6 +72,12 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Change Close Padding" />
+
+            <Button
+                android:id="@+id/btnSetAllCaps"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Set All Caps" />
         </LinearLayout>
 
     </ScrollView>
