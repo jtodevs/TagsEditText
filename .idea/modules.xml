@@ -2,8 +2,11 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/StudioProjects-TagsEditText.iml" filepath="$PROJECT_DIR$/.idea/modules/StudioProjects-TagsEditText.iml" group="TagsEditText" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/TagsEditText/StudioProjects-TagsEditText-TagsEditText.iml" filepath="$PROJECT_DIR$/.idea/modules/TagsEditText/StudioProjects-TagsEditText-TagsEditText.iml" group="TagsEditText/TagsEditText" />
       <module fileurl="file://$PROJECT_DIR$/TagsEditText.iml" filepath="$PROJECT_DIR$/TagsEditText.iml" />
       <module fileurl="file://$PROJECT_DIR$/TagsEditText/TagsEditText-TagsEditText.iml" filepath="$PROJECT_DIR$/TagsEditText/TagsEditText-TagsEditText.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/app/TagsEditText-app.iml" filepath="$PROJECT_DIR$/.idea/modules/app/TagsEditText-app.iml" group="TagsEditText/app" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
     </modules>
   </component>
