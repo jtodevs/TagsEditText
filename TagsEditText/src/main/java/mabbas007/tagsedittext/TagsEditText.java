@@ -10,7 +10,6 @@ import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Parcel;
 import android.os.Parcelable;
 import android.text.Editable;
 import android.text.InputType;
@@ -160,11 +159,8 @@ public class TagsEditText extends AutoCompleteTextView {
         if (!TextUtils.isEmpty(text)) {
             String source = mIsSpacesAllowedInTags ? text.toString().trim() : text.toString().replaceAll(" ", "");
             if (mTags.isEmpty()) {
-                Tag tag = new Tag();
-                tag.setIndex(0);
+                Tag tag = createTag(0, source);
                 tag.setPosition(0);
-                tag.setSource(source);
-                tag.setSpan(true);
                 mTags.add(tag);
             } else {
                 int size = mTags.size();
@@ -173,11 +169,8 @@ public class TagsEditText extends AutoCompleteTextView {
                     lastTag.setSource(source);
                     lastTag.setSpan(true);
                 } else {
-                    Tag newTag = new Tag();
-                    newTag.setIndex(size);
+                    Tag newTag = createTag(size, source);
                     newTag.setPosition(lastTag.getPosition() + lastTag.getSource().length() + 1);
-                    newTag.setSource(source);
-                    newTag.setSpan(true);
                     mTags.add(newTag);
                 }
             }
@@ -198,12 +191,9 @@ public class TagsEditText extends AutoCompleteTextView {
         int length = tags != null ? tags.length : 0;
         int position = 0;
         for (int i = 0; i < length; i++) {
-            Tag tag = new Tag();
-            tag.setIndex(i);
-            tag.setPosition(position);
             String source = mIsSpacesAllowedInTags ? tags[i].toString().trim() : tags[i].toString().replaceAll(" ", "");
-            tag.setSource(source);
-            tag.setSpan(true);
+            Tag tag = createTag(i, source);
+            tag.setPosition(position);
             mTags.add(tag);
             position += source.length() + 1;
         }
@@ -222,12 +212,9 @@ public class TagsEditText extends AutoCompleteTextView {
         int length = tags != null ? tags.length : 0;
         int position = 0;
         for (int i = 0; i < length; i++) {
-            Tag tag = new Tag();
-            tag.setIndex(i);
-            tag.setPosition(position);
             String source = mIsSpacesAllowedInTags ? tags[i].trim() : tags[i].replaceAll(" ", "");
-            tag.setSource(source);
-            tag.setSpan(true);
+            Tag tag = createTag(i, source);
+            tag.setPosition(position);
             mTags.add(tag);
             position += source.length() + 1;
         }
@@ -488,7 +475,7 @@ public class TagsEditText extends AutoCompleteTextView {
                 Tag tag = mTags.get(i);
                 String source = tag.getSource();
                 if (tag.isSpan()) {
-                    TextView tv = createTextView(source);
+                    TextView tv = createTextView(source, tag.getTagProperties());
                     Drawable bd = convertViewToDrawable(tv);
                     bd.setBounds(0, 0, bd.getIntrinsicWidth(), bd.getIntrinsicHeight());
                     final TagSpan span = new TagSpan(bd, source);
@@ -510,6 +497,15 @@ public class TagsEditText extends AutoCompleteTextView {
         }
     }
 
+    private Tag createTag(int index, String source) {
+        Tag tag = new Tag();
+        tag.setSource(source);
+        tag.setIndex(index);
+        tag.setSpan(true);
+        tag.getTagProperties().setBackgroundDrawable(mTagsBackground).setTextColor(mTagsTextColor);
+        return tag;
+    }
+
     private void updateTags(String newString) {
         String source = getNewTag(newString);
         if (!TextUtils.isEmpty(source) && !source.equals(NEW_LINE)) {
@@ -519,19 +515,27 @@ public class TagsEditText extends AutoCompleteTextView {
                 source = source.substring(0, source.length() - 1);
                 source = source.trim();
             }
-            Tag tag = new Tag();
-            tag.setSource(source);
+            Tag tag = createTag(0, source);
             tag.setSpan(isSpan);
             int size = mTags.size();
+            int index = (size <= 0) ? 0 : size;
             if (size <= 0) {
-                tag.setIndex(0);
+                tag.setIndex(index);
                 tag.setPosition(0);
             } else {
                 Tag lastTag = mTags.get(size - 1);
-                tag.setIndex(size);
+                tag.setIndex(index);
                 tag.setPosition(lastTag.getPosition() + lastTag.getSource().length() + 1);
             }
-            mTags.add(tag);
+
+            if (mListener != null) {
+                if (mListener.onNewTag(tag)) {
+                    mTags.add(tag);
+                }
+            }
+            else {
+                mTags.add(tag);
+            }
         }
     }
 
@@ -576,10 +580,12 @@ public class TagsEditText extends AutoCompleteTextView {
             newTag.setIndex(i - 1);
             newTag.setPosition(newTag.getPosition() - tagLength);
         }
-        mTags.remove(tagIndex);
+        Tag removedTag = mTags.remove(tagIndex);
         mTagSpans.remove(tagIndex);
-        if (mListener == null) return;
-        mListener.onTagsChanged(convertTagSpanToList(mTagSpans));
+        if (mListener != null) {
+            mListener.onTagRemoved(tagIndex, removedTag);
+            mListener.onTagsChanged(convertTagSpanToList(mTagSpans));
+        }
     }
 
     private static List<String> convertTagSpanToList(List<TagSpan> tagSpans) {
@@ -614,14 +620,14 @@ public class TagsEditText extends AutoCompleteTextView {
         return new BitmapDrawable(getResources(), viewBmp);
     }
 
-    private TextView createTextView(String text) {
+    private TextView createTextView(String text, TagProperties tagProperties) {
         TextView textView = new TextView(getContext());
         if (getWidth() > 0) {
             textView.setMaxWidth(getWidth() - 50);
         }
         textView.setText(text);
-        textView.setTextSize(TypedValue.COMPLEX_UNIT_PX, mTagsTextSize);
-        textView.setTextColor(mTagsTextColor);
+        textView.setTextSize(TypedValue.COMPLEX_UNIT_PX, tagProperties.getTextSize());
+        textView.setTextColor(tagProperties.getTextColor());
         textView.setPadding(mTagsPaddingLeft, mTagsPaddingTop, mTagsPaddingRight, mTagsPaddingBottom);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
@@ -632,91 +638,14 @@ public class TagsEditText extends AutoCompleteTextView {
 
         // check Android version for set background
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
-            textView.setBackground(mTagsBackground);
+            textView.setBackground((tagProperties != null) ? tagProperties.getBackgroundDrawable() : mTagsBackground);
         } else {
-            textView.setBackgroundDrawable(mTagsBackground);
+            textView.setBackgroundDrawable((tagProperties != null) ? tagProperties.getBackgroundDrawable() : mTagsBackground);
         }
 
         textView.setCompoundDrawablesWithIntrinsicBounds(mLeftDrawable, null, mRightDrawable, null);
         textView.setCompoundDrawablePadding(mDrawablePadding);
         return textView;
-    }
-
-
-    private static final class Tag implements Parcelable {
-
-        private int mPosition;
-        private int mIndex;
-        private String mSource;
-        private boolean mSpan;
-
-        public static final Creator<Tag> CREATOR = new Creator<Tag>() {
-            @Override
-            public Tag createFromParcel(Parcel in) {
-                return new Tag(in);
-            }
-
-            @Override
-            public Tag[] newArray(int size) {
-                return new Tag[size];
-            }
-        };
-
-        private Tag() {
-        }
-
-        protected Tag(Parcel in) {
-            mPosition = in.readInt();
-            mIndex = in.readInt();
-            mSource = in.readString();
-            mSpan = in.readInt() == 1;
-        }
-
-        private void setPosition(int pos) {
-            mPosition = pos;
-        }
-
-        private int getPosition() {
-            return mPosition;
-        }
-
-        private void setIndex(int index) {
-            mIndex = index;
-        }
-
-        private int getIndex() {
-            return mIndex;
-        }
-
-        public void setSource(String source) {
-            mSource = source;
-        }
-
-        public String getSource() {
-            return mSource;
-        }
-
-        public void setSpan(boolean span) {
-            mSpan = span;
-        }
-
-        public boolean isSpan() {
-            return mSpan;
-        }
-
-        @Override
-        public int describeContents() {
-            return 0;
-        }
-
-        @Override
-        public void writeToParcel(Parcel dest, int flags) {
-            dest.writeInt(mPosition);
-            dest.writeInt(mIndex);
-            dest.writeString(mSource);
-            dest.writeInt(mSpan ? 1 : 0);
-        }
-
     }
 
     private static final class TagSpan extends ImageSpan {
@@ -772,27 +701,15 @@ public class TagsEditText extends AutoCompleteTextView {
         public Tag getTag() {
             return mTag;
         }
-
     }
 
     public interface TagsEditListener {
+        boolean onNewTag(final Tag tag);
 
         void onTagsChanged(Collection<String> tags);
 
         void onEditingFinished();
 
+        void onTagRemoved(int tagIndex, Tag removedTag);
     }
-
-    public static class TagsEditListenerAdapter implements TagsEditListener {
-
-        @Override
-        public void onTagsChanged(Collection<String> tags) {
-        }
-
-        @Override
-        public void onEditingFinished() {
-        }
-
-    }
-
 }

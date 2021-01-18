@@ -1,16 +1,21 @@
 package mabbas007.myapplication;
 
+import android.graphics.Color;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.ArrayAdapter;
+import android.widget.Toast;
 
 import androidx.annotation.IdRes;
 import androidx.appcompat.app.AppCompatActivity;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
+import java.util.Locale;
 
+import mabbas007.tagsedittext.Tag;
 import mabbas007.tagsedittext.TagsEditText;
 
 public class MainActivity extends AppCompatActivity
@@ -18,6 +23,7 @@ public class MainActivity extends AppCompatActivity
 
     private static final String TAG = "MainActivity";
     private TagsEditText mTagsEditText;
+    private List<String> fruitList;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -27,8 +33,10 @@ public class MainActivity extends AppCompatActivity
         mTagsEditText.setHint("Enter names of fruits");
         mTagsEditText.setTagsListener(this);
         mTagsEditText.setTagsWithSpacesEnabled(true);
+        final String[] fruits = getResources().getStringArray(R.array.fruits);
+        fruitList = Arrays.asList(fruits);
         mTagsEditText.setAdapter(new ArrayAdapter<>(this,
-                android.R.layout.simple_dropdown_item_1line, getResources().getStringArray(R.array.fruits)));
+                android.R.layout.simple_dropdown_item_1line, fruits));
         mTagsEditText.setThreshold(1);
 
         setButtonClickListener(R.id.btnChangeTags);
@@ -88,6 +96,15 @@ public class MainActivity extends AppCompatActivity
     }
 
     @Override
+    public boolean onNewTag(Tag tag) {
+        Log.d(TAG, "Tag added");
+        if (!fruitList.contains(tag.getSource().toUpperCase()))  {
+            tag.getTagProperties().setTextColor(Color.RED);
+        }
+        return true;
+    }
+
+    @Override
     public void onTagsChanged(Collection<String> tags) {
         Log.d(TAG, "Tags changed: ");
         Log.d(TAG, Arrays.toString(tags.toArray()));
@@ -101,8 +118,16 @@ public class MainActivity extends AppCompatActivity
 //        //mTagsEditText.clearFocus();
     }
 
+    @Override
+    public void onTagRemoved(int tagIndex, Tag removedTag) {
+        String str = String.format(Locale.US, "Tag '%s' at index=%d has been removed", removedTag.getSource(), tagIndex);
+        Log.d(TAG, "Tag removed: " + str);
+        Toast.makeText(MainActivity.this,
+                str,
+                Toast.LENGTH_SHORT).show();
+    }
+
     private void setButtonClickListener(@IdRes int id) {
         findViewById(id).setOnClickListener(this);
     }
-
 }
